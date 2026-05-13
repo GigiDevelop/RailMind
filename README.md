@@ -207,4 +207,3 @@ Poi aprire:
 ```text
 http://localhost:8000
 ```
-

@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RailMind</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #111827;
+        color: #e5e7eb;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .app-shell {
+        min-height: 100vh;
+      }
+
+      header {
+        align-items: center;
+        background: #030712;
+        border-bottom: 1px solid #374151;
+        display: flex;
+        gap: 16px;
+        min-height: 64px;
+        padding: 0 24px;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+      }
+
+      .hamburger {
+        align-items: center;
+        background: transparent;
+        border: 1px solid #4b5563;
+        border-radius: 8px;
+        color: #e5e7eb;
+        cursor: pointer;
+        display: none;
+        height: 40px;
+        justify-content: center;
+        width: 40px;
+      }
+
+      .hamburger span,
+      .hamburger::before,
+      .hamburger::after {
+        background: currentColor;
+        content: "";
+        display: block;
+        height: 2px;
+        position: absolute;
+        width: 18px;
+      }
+
+      .hamburger {
+        position: relative;
+      }
+
+      .hamburger::before {
+        transform: translateY(-6px);
+      }
+
+      .hamburger::after {
+        transform: translateY(6px);
+      }
+
+      .title-block h1 {
+        font-size: 1.25rem;
+        margin: 0;
+      }
+
+      .title-block div {
+        color: #9ca3af;
+        font-size: 0.9rem;
+        margin-top: 2px;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        min-height: calc(100vh - 65px);
+      }
+
+      .drawer {
+        background: #0f172a;
+        border-right: 1px solid #374151;
+        padding: 16px;
+      }
+
+      .drawer-title {
+        color: #9ca3af;
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        margin: 0 0 12px;
+        text-transform: uppercase;
+      }
+
+      .nav-link {
+        background: transparent;
+        border: 0;
+        border-radius: 10px;
+        color: #d1d5db;
+        cursor: pointer;
+        display: block;
+        padding: 12px;
+        text-align: left;
+        text-decoration: none;
+        width: 100%;
+      }
+
+      .nav-link:hover,
+      .nav-link.active {
+        background: #1f2937;
+        color: #ffffff;
+      }
+
+      .drawer-backdrop {
+        background: rgb(0 0 0 / 55%);
+        display: none;
+        inset: 0;
+        position: fixed;
+        z-index: 30;
+      }
+
+      main {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        padding: 16px;
+      }
+
+      section {
+        background: #1f2937;
+        border: 1px solid #374151;
+        border-radius: 12px;
+        padding: 16px;
+      }
+
+      h1,
+      h2 {
+        margin-top: 0;
+      }
+
+      pre {
+        overflow: auto;
+        white-space: pre-wrap;
+      }
+
+      .ok {
+        color: #86efac;
+      }
+
+      @media (max-width: 760px) {
+        header {
+          padding: 0 16px;
+        }
+
+        .hamburger {
+          display: flex;
+        }
+
+        .layout {
+          display: block;
+        }
+
+        .drawer {
+          bottom: 0;
+          box-shadow: 0 20px 40px rgb(0 0 0 / 40%);
+          left: 0;
+          max-width: 300px;
+          position: fixed;
+          top: 0;
+          transform: translateX(-100%);
+          transition: transform 180ms ease;
+          width: 78vw;
+          z-index: 40;
+        }
+
+        body.drawer-open .drawer {
+          transform: translateX(0);
+        }
+
+        body.drawer-open .drawer-backdrop {
+          display: block;
+        }
+
+        main {
+          grid-template-columns: 1fr;
+          padding: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header>
+        <button class="hamburger" id="drawer-toggle" aria-label="Apri menu" aria-expanded="false">
+          <span></span>
+        </button>
+        <div class="title-block">
+          <h1>RailMind</h1>
+          <div>Stato connessione: <span id="connection">in attesa</span></div>
+        </div>
+      </header>
+
+      <div class="drawer-backdrop" id="drawer-backdrop"></div>
+
+      <div class="layout">
+        <aside class="drawer" id="drawer">
+          <p class="drawer-title">Menu</p>
+          <a class="nav-link active" href="#locomotive-panel">Dashboard</a>
+          <a class="nav-link" href="#turnouts-panel">Scambi</a>
+          <a class="nav-link" href="#lights-panel">Luci</a>
+          <a class="nav-link" href="#events-panel">Eventi</a>
+        </aside>
+
+        <main>
+          <section id="locomotive-panel">
+            <h2>Locomotive</h2>
+            <pre id="locomotives">{}</pre>
+          </section>
+
+          <section id="turnouts-panel">
+            <h2>Scambi</h2>
+            <pre id="turnouts">{}</pre>
+          </section>
+
+          <section id="lights-panel">
+            <h2>Regole Luci</h2>
+            <pre id="light-rules">{}</pre>
+          </section>
+
+          <section id="events-panel">
+            <h2>Eventi</h2>
+            <pre id="events">[]</pre>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      const connection = document.getElementById("connection");
+      const drawerToggle = document.getElementById("drawer-toggle");
+      const drawerBackdrop = document.getElementById("drawer-backdrop");
+      const navLinks = document.querySelectorAll(".nav-link");
+      const locomotives = document.getElementById("locomotives");
+      const turnouts = document.getElementById("turnouts");
+      const lightRules = document.getElementById("light-rules");
+      const events = document.getElementById("events");
+
+      function setDrawerOpen(isOpen) {
+        document.body.classList.toggle("drawer-open", isOpen);
+        drawerToggle.setAttribute("aria-expanded", String(isOpen));
+      }
+
+      drawerToggle.addEventListener("click", () => {
+        setDrawerOpen(!document.body.classList.contains("drawer-open"));
+      });
+
+      drawerBackdrop.addEventListener("click", () => setDrawerOpen(false));
+
+      navLinks.forEach((link) => {
+        link.addEventListener("click", () => setDrawerOpen(false));
+      });
+
+      function render(data) {
+        locomotives.textContent = JSON.stringify(data.locomotives, null, 2);
+        turnouts.textContent = JSON.stringify(data.turnouts, null, 2);
+        lightRules.textContent = JSON.stringify(data.light_rules, null, 2);
+        events.textContent = JSON.stringify(data.events, null, 2);
+      }
+
+      function connect() {
+        const protocol = location.protocol === "https:" ? "wss" : "ws";
+        const ws = new WebSocket(`${protocol}://${location.host}/ws/telemetry`);
+
+        ws.onopen = () => {
+          connection.textContent = "connesso";
+          connection.className = "ok";
+        };
+
+        ws.onmessage = (event) => render(JSON.parse(event.data));
+
+        ws.onclose = () => {
+          connection.textContent = "disconnesso, riconnessione...";
+          connection.className = "";
+          setTimeout(connect, 1000);
+        };
+      }
+
+      connect();
+    </script>
+  </body>
+</html>
+
